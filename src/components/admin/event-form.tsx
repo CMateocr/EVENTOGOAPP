@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { createEvent, updateEvent } from '@/lib/actions';
 import { Event } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash, PlusCircle } from 'lucide-react';
+import LocationPickerLoader from './location-picker-loader';
 
 const eventFormSchema = z.object({
   name: z.string().min(3, 'Event name must be at least 3 characters.'),
@@ -49,18 +50,21 @@ export default function EventForm({ event }: { event: Event | null }) {
       description: event?.description || '',
       date: event ? format(new Date(event.date), "yyyy-MM-dd'T'HH:mm") : '',
       locationName: event?.location.name || '',
-      locationLat: event?.location.lat || -0.18,
-      locationLng: event?.location.lng || -78.46,
+      locationLat: event?.location.lat || -0.180653,
+      locationLng: event?.location.lng || -78.467834,
       capacity: event?.capacity || 100,
       image: event?.image || '',
       ticketTypes: event?.ticketTypes || [{ name: 'General Admission', price: 10 }],
     },
   });
-
+  
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "ticketTypes"
   });
+
+  const watchedLat = form.watch('locationLat');
+  const watchedLng = form.watch('locationLng');
 
   async function onSubmit(data: EventFormValues) {
     setIsPending(true);
@@ -248,6 +252,7 @@ export default function EventForm({ event }: { event: Event | null }) {
              <Card>
                 <CardHeader>
                     <CardTitle>Location</CardTitle>
+                    <CardDescription>Click on the map to set the event location.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <FormField
@@ -263,7 +268,16 @@ export default function EventForm({ event }: { event: Event | null }) {
                         </FormItem>
                     )}
                     />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="h-64 w-full rounded-md overflow-hidden">
+                        <LocationPickerLoader
+                            position={{ lat: watchedLat, lng: watchedLng }}
+                            onPositionChange={({ lat, lng }) => {
+                                form.setValue('locationLat', lat);
+                                form.setValue('locationLng', lng);
+                            }}
+                        />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
                          <FormField
                             control={form.control}
                             name="locationLat"
@@ -271,7 +285,7 @@ export default function EventForm({ event }: { event: Event | null }) {
                                 <FormItem>
                                 <FormLabel>Latitude</FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="any" {...field} />
+                                    <Input type="number" step="any" {...field} readOnly />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -284,7 +298,7 @@ export default function EventForm({ event }: { event: Event | null }) {
                                 <FormItem>
                                 <FormLabel>Longitude</FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="any" {...field} />
+                                    <Input type="number" step="any" {...field} readOnly />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
