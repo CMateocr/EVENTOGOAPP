@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { validateTicket } from '@/lib/actions';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -26,7 +26,7 @@ function SubmitButton() {
 }
 
 export default function TicketValidationForm() {
-  const [state, formAction] = useFormState(validateTicket, null);
+  const [state, formAction] = useActionState(validateTicket, null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
