@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
@@ -12,47 +11,65 @@ type LocationPickerProps = {
   onPositionChange: (position: { lat: number; lng: number }) => void;
 };
 
-function DraggableMarker({ position, onPositionChange }: LocationPickerProps) {
-  const [markerPosition, setMarkerPosition] = useState(new L.LatLng(position.lat, position.lng));
-
-  const map = useMapEvents({
-    click(e) {
-      setMarkerPosition(e.latlng);
-      onPositionChange(e.latlng);
-      map.flyTo(e.latlng, map.getZoom());
-    },
-  });
-
-  const eventHandlers = useMemo(
-    () => ({
-      dragend(e: L.DragEndEvent) {
-        const newPos = e.target.getLatLng();
-        setMarkerPosition(newPos);
-        onPositionChange(newPos);
-      },
-    }),
-    [onPositionChange],
-  );
-
-  return (
-    <Marker
-      draggable={true}
-      eventHandlers={eventHandlers}
-      position={markerPosition}
-    />
-  );
-}
-
 export default function LocationPicker({ position, onPositionChange }: LocationPickerProps) {
-  const quitoPosition: L.LatLngTuple = [position.lat, position.lng];
+    const mapRef = useRef<HTMLDivElement>(null);
+    const mapInstance = useRef<L.Map | null>(null);
+    const markerInstance = useRef<L.Marker | null>(null);
+    const quitoPosition: L.LatLngTuple = [position.lat, position.lng];
+
+    useEffect(() => {
+        if (mapRef.current && !mapInstance.current) {
+            // Initialize map
+            mapInstance.current = L.map(mapRef.current).setView(quitoPosition, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapInstance.current);
+
+            // Initialize marker
+            markerInstance.current = L.marker(quitoPosition, { draggable: true }).addTo(mapInstance.current);
+
+            // Marker drag event
+            markerInstance.current.on('dragend', () => {
+                if (markerInstance.current) {
+                    const newPos = markerInstance.current.getLatLng();
+                    onPositionChange(newPos);
+                }
+            });
+
+            // Map click event
+            mapInstance.current.on('click', (e) => {
+                if (markerInstance.current) {
+                    markerInstance.current.setLatLng(e.latlng);
+                    onPositionChange(e.latlng);
+                }
+                 if(mapInstance.current) {
+                    mapInstance.current.flyTo(e.latlng, mapInstance.current.getZoom());
+                }
+            });
+        }
+        
+        // Cleanup function
+        return () => {
+            if (mapInstance.current) {
+                mapInstance.current.remove();
+                mapInstance.current = null;
+            }
+        };
+    }, []); // Empty dependency array ensures this runs only once
+
+    // Update marker position if the prop changes from outside
+    useEffect(() => {
+        if (markerInstance.current && position.lat !== markerInstance.current.getLatLng().lat || position.lng !== markerInstance.current.getLatLng().lng) {
+            const newLatLng = L.latLng(position.lat, position.lng);
+            markerInstance.current.setLatLng(newLatLng);
+            if (mapInstance.current) {
+                mapInstance.current.setView(newLatLng);
+            }
+        }
+    }, [position]);
+
 
   return (
-    <MapContainer center={quitoPosition} zoom={13} className="w-full h-full">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <DraggableMarker position={position} onPositionChange={onPositionChange} />
-    </MapContainer>
+    <div ref={mapRef} className="w-full h-full" />
   );
 }
