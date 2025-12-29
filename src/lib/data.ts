@@ -91,55 +91,64 @@ export const createOrder = async (
         throw new Error(`Cannot purchase tickets. Only ${event.capacity - existingTickets} tickets left.`);
     }
 
-    const newTickets: any[] = [];
     let totalAmount = 0;
+    const ticketBlueprints: any[] = [];
     
     for (const selection of ticketSelections) {
         const ticketType = event.ticketTypes.find(tt => tt.id === selection.ticketTypeId);
-        if (!ticketType) throw new Error(`Ticket type ${selection.ticketTypeId} not found`);
+        if (!ticketType) throw new Error(`Ticket validation failed: Ticket type ${selection.ticketTypeId} not found`);
 
         totalAmount += ticketType.price * selection.quantity;
 
         for (let i = 0; i < selection.quantity; i++) {
-            // We create a temporary ticket structure, the final one will be created by mongoose
-            const newTicketData = {
+            ticketBlueprints.push({
                 eventId,
                 userId,
                 ticketTypeId: selection.ticketTypeId,
-                status: 'valid',
-                qrData: 'placeholder'
-            };
-            newTickets.push(newTicketData);
+                status: 'valid' as const,
+            });
         }
     }
 
-    // Insert tickets and get their generated IDs
-    const createdTicketDocs = await TicketModel.insertMany(newTickets);
-    const ticketIds = createdTicketDocs.map(t => t._id);
-
-    // Create the order with the ticket IDs
-    const newOrder = await OrderModel.create({
+    // Step 1: Create the Order first to get an orderId
+    const newOrder = new OrderModel({
         userId,
         eventId,
-        tickets: ticketIds,
+        tickets: [], // tickets will be added later
         totalAmount,
         createdAt: new Date(),
     });
+    await newOrder.save();
+    const orderId = newOrder._id.toString();
 
-    // Now, update each ticket with its final qrData and the orderId
-    for (const ticket of createdTicketDocs) {
-        const qrData = JSON.stringify({ ticketId: ticket._id.toString(), eventId, userId });
-        await TicketModel.findByIdAndUpdate(ticket._id, { qrData, orderId: newOrder._id.toString() });
+    // Step 2: Create tickets with the final orderId and generate qrData
+    const ticketsToCreate = ticketBlueprints.map(blueprint => {
+        const ticketId = new mongoose.Types.ObjectId();
+        return {
+            ...blueprint,
+            _id: ticketId,
+            orderId: orderId,
+            qrData: JSON.stringify({ ticketId: ticketId.toString(), eventId, userId }),
+        };
+    });
+    
+    if (ticketsToCreate.length > 0) {
+      await TicketModel.insertMany(ticketsToCreate);
     }
 
-    // Fetch the final order with populated ticket data to return
-    const finalOrder = await OrderModel.findById(newOrder._id).populate('tickets').lean();
-    
+    // Step 3: Update the order with the IDs of the created tickets
+    newOrder.tickets = ticketsToCreate.map(t => t._id);
+    await newOrder.save();
+
+    // Step 4: Return the fully populated order
+    const finalOrder = await OrderModel.findById(orderId).populate('tickets').lean();
+    if (!finalOrder) throw new Error("Failed to retrieve final order.");
+
     const result = {
         ...finalOrder,
-        id: finalOrder!._id.toString(),
-        tickets: finalOrder!.tickets.map((t: any) => ({...t, id: t._id.toString()}))
-    }
+        id: finalOrder._id.toString(),
+        tickets: finalOrder.tickets.map((t: any) => ({...t, id: t._id.toString()}))
+    };
     return JSON.parse(JSON.stringify(result));
 };
 

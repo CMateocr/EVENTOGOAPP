@@ -86,8 +86,9 @@ export async function purchaseTickets(eventId: string, ticketSelections: {ticket
     await createNewOrder(userPayload.id, eventId, ticketSelections);
     revalidatePath('/tickets');
     return { success: true, message: 'Tickets purchased successfully!' };
-  } catch(error) {
-    return { success: false, message: (error as Error).message || 'An unknown error occurred.' };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return { success: false, message: errorMessage };
   }
 }
 
