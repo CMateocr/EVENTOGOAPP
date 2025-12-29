@@ -12,16 +12,17 @@ interface MainNavProps extends React.HTMLAttributes<HTMLElement> {
 export function MainNav({ className, user, ...props }: MainNavProps) {
   const pathname = usePathname();
 
-  const routes = [
+  const baseRoutes = [
     { href: '/', label: 'Events', active: pathname === '/' },
     { href: '/discover', label: 'Discover', active: pathname === '/discover' },
-    ...(user?.role === 'Admin'
-      ? [
-        { href: '/admin/events', label: 'Manage Events', active: pathname.startsWith('/admin/events') },
-        { href: '/scan', label: 'Scan Tickets', active: pathname === '/scan' }
-        ]
-      : []),
   ];
+
+  const adminRoutes = [
+    { href: '/admin/events', label: 'Manage Events', active: pathname.startsWith('/admin/events') },
+    { href: '/scan', label: 'Scan Tickets', active: pathname === '/scan' }
+  ];
+
+  const routes = user?.role === 'Admin' ? [...baseRoutes, ...adminRoutes] : baseRoutes;
 
   return (
     <nav
