@@ -1,15 +1,8 @@
 import { getEvents } from "@/lib/data";
-import dynamic from "next/dynamic";
-import { useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import DiscoverMapLoader from "@/components/discover-map-loader";
 
 export default async function DiscoverPage() {
     const events = await getEvents();
-
-    const EventMap = useMemo(() => dynamic(() => import('@/components/event-map'), {
-        loading: () => <Skeleton className="w-full h-full" />,
-        ssr: false
-    }), []);
     
     return (
         <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -20,7 +13,7 @@ export default async function DiscoverPage() {
                 <p className="text-muted-foreground mb-6">Explore upcoming events in Quito. Click on a marker for more details.</p>
             </div>
             <div className="flex-grow">
-                 <EventMap events={events} />
+                 <DiscoverMapLoader events={events} />
             </div>
         </div>
     )
