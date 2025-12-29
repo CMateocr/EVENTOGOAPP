@@ -1,0 +1,29 @@
+diff --git a/node_modules/react-leaflet/package.json b/node_modules/react-leaflet/package.json
+index 5153288..39e083a 100644
+--- a/node_modules/react-leaflet/package.json
++++ b/node_modules/react-leaflet/package.json
+@@ -51,7 +51,7 @@
+     "leaflet": ">=1.7.1"
+   },
+   "peerDependencies": {
+-    "react": "^18.0.0",
++    "react": "^18.0.0 || ^19.0.0",
+     "react-dom": "^18.0.0"
+   },
+   "peerDependenciesMeta": {
+diff --git a/node_modules/react-leaflet/lib/MapContainer.js b/node_modules/react-leaflet/lib/MapContainer.js
+index 9277025..e244837 100644
+--- a/node_modules/react-leaflet/lib/MapContainer.js
++++ b/node_modules/react-leaflet/lib/MapContainer.js
+@@ -1,9 +1,10 @@
+ 'use client';
+-import { useEffect, useRef, useState } from 'react';
++import { use, useEffect, useRef, useState } from 'react';
+ import { LeafletProvider } from './context.js';
+ import { useCreateMap } from './hooks.js';
+ function MapContainer(props) {
+     const { children, className, id, placeholder, style } = props;
++    if (use) use(Promise.resolve());
+     const [map, setMap] = useState();
+     const containerRef = useCreateMap(props, setMap);
+     const context = map ? {
