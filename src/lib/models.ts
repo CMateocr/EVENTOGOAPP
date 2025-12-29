@@ -1,3 +1,4 @@
+
 import mongoose, { Schema, Document, models, Model } from 'mongoose';
 import type { User, Event, Ticket, Order, TicketType } from './types';
 
@@ -12,7 +13,7 @@ const TicketTypeSchema = new Schema<TicketType>({
     id: { type: String, required: true },
     name: { type: String, required: true },
     price: { type: Number, required: true }
-});
+}, { _id: false });
 
 const EventSchema = new Schema<Event>({
     name: { type: String, required: true },
@@ -45,8 +46,13 @@ const OrderSchema = new Schema<Order>({
     createdAt: { type: Date, default: Date.now }
 });
 
-// For Next.js hot-reloading, we need to check if the model already exists before defining it.
-export const UserModel = (models.User as Model<User>) || mongoose.model<User>('User', UserSchema);
-export const EventModel = (models.Event as Model<Event>) || mongoose.model<Event>('Event', EventSchema);
-export const TicketModel = (models.Ticket as Model<Ticket>) || mongoose.model<Ticket>('Ticket', TicketSchema);
-export const OrderModel = (models.Order as Model<Order>) || mongoose.model<Order>('Order', OrderSchema);
+
+function getModel<T>(name: string, schema: Schema): Model<T> {
+    // For Next.js hot-reloading, we need to check if the model already exists before defining it.
+    return (models[name] as Model<T>) || mongoose.model<T>(name, schema);
+}
+
+export const UserModel = getModel<User>('User', UserSchema);
+export const EventModel = getModel<Event>('Event', EventSchema);
+export const TicketModel = getModel<Ticket>('Ticket', TicketSchema);
+export const OrderModel = getModel<Order>('Order', OrderSchema);
