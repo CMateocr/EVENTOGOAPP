@@ -150,12 +150,17 @@ export async function createEvent(formData: FormData) {
             ticketTypes: JSON.parse(ticketTypes),
         };
         await createEventInDb(newEvent);
+        
+        // Revalidate paths BEFORE redirecting
         revalidatePath('/admin/events');
         revalidatePath('/');
         revalidatePath('/discover');
+
     } catch (e) {
         return { success: false, message: 'Failed to create event.' };
     }
+    
+    // Redirect after all operations are complete
     redirect('/admin/events');
 }
 
@@ -178,13 +183,18 @@ export async function updateEvent(id: string, formData: FormData) {
             ticketTypes: JSON.parse(ticketTypes),
         };
         await updateEventInDb(id, updatedEvent);
+        
+        // Revalidate paths BEFORE redirecting
         revalidatePath('/admin/events');
         revalidatePath(`/events/${id}`);
         revalidatePath('/');
         revalidatePath('/discover');
+
     } catch (e) {
         return { success: false, message: 'Failed to update event.' };
     }
+    
+    // Redirect after all operations are complete
     redirect('/admin/events');
 }
 
