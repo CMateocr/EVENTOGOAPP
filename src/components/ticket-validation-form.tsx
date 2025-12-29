@@ -1,13 +1,13 @@
 'use client';
 
-import { useActionState, useFormStatus } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { validateTicket } from '@/lib/actions';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { CheckCircle2, XCircle, Loader } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 
 function SubmitButton() {
   const { pending } = useFormStatus();

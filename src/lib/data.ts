@@ -1,4 +1,3 @@
-
 import mongoose from 'mongoose';
 import dbConnect from './db';
 import { EventModel, UserModel, TicketModel, OrderModel } from './models';
