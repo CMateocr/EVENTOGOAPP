@@ -1,3 +1,5 @@
+import { Types } from 'mongoose';
+
 export type User = {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ export type TicketType = {
 };
 
 export type Event = {
+  _id?: Types.ObjectId;
   id: string;
   name: string;
   description: string;
@@ -28,6 +31,7 @@ export type Event = {
 };
 
 export type Ticket = {
+  _id?: Types.ObjectId;
   id: string;
   orderId: string;
   eventId: string;
@@ -38,10 +42,11 @@ export type Ticket = {
 };
 
 export type Order = {
+  _id?: Types.ObjectId;
   id:string;
   userId: string;
   eventId: string;
-  tickets: Ticket[];
+  tickets: (Ticket | Types.ObjectId)[];
   totalAmount: number;
   createdAt: Date;
 };
