@@ -153,18 +153,17 @@ export async function createEvent(formData: FormData, token: string | null) {
                 lng: validated.data.locationLng,
             },
             ticketTypes: JSON.parse(ticketTypes),
-            createdBy: user.id,
+            createdBy: user.id, // This line was missing
         };
         await createEventInDb(newEvent);
         
-        revalidatePath('/admin/events');
-        revalidatePath('/');
-        revalidatePath('/discover');
-
     } catch (e) {
         return { success: false, message: 'Failed to create event.' };
     }
     
+    revalidatePath('/admin/events');
+    revalidatePath('/');
+    revalidatePath('/discover');
     redirect('/admin/events');
 }
 
@@ -199,15 +198,14 @@ export async function updateEvent(id: string, formData: FormData, token: string 
         };
         await updateEventInDb(id, updatedEvent);
         
-        revalidatePath('/admin/events');
-        revalidatePath(`/events/${id}`);
-        revalidatePath('/');
-        revalidatePath('/discover');
-
     } catch (e) {
         return { success: false, message: 'Failed to update event.' };
     }
     
+    revalidatePath('/admin/events');
+    revalidatePath(`/events/${id}`);
+    revalidatePath('/');
+    revalidatePath('/discover');
     redirect('/admin/events');
 }
 
