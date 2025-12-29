@@ -27,6 +27,9 @@ export const getEventById = async (id: string): Promise<Event | undefined> => {
 
 export const createEvent = async (eventData: Omit<Event, 'id'>): Promise<Event> => {
     await dbConnect();
+    if (!eventData.createdBy) {
+      throw new Error('Event must have a creator (createdBy).');
+    }
     const newEvent = await EventModel.create(eventData);
     return JSON.parse(JSON.stringify({ ...newEvent.toObject(), id: newEvent._id.toString() }));
 };
@@ -305,6 +308,3 @@ export const seedDatabase = async () => {
         events: 0,
     }
 };
-
-
-    

@@ -141,24 +141,25 @@ export async function createEvent(formData: FormData, token: string | null) {
         return { success: false, message: 'Invalid data.', errors: validated.error.flatten().fieldErrors };
     }
 
-    const { ticketTypes, ...eventData } = validated.data;
+    const { ticketTypes, date, locationLat, locationLng, locationName, ...restOfData } = validated.data;
 
     try {
         const newEvent: Omit<Event, 'id'> = {
-            ...eventData,
-            date: new Date(validated.data.date),
+            ...restOfData,
+            date: new Date(date),
             location: {
-                name: validated.data.locationName,
-                lat: validated.data.locationLat,
-                lng: validated.data.locationLng,
+                name: locationName,
+                lat: locationLat,
+                lng: locationLng,
             },
             ticketTypes: JSON.parse(ticketTypes),
-            createdBy: user.id, // THIS IS THE FIX
+            createdBy: user.id,
         };
         await createEventInDb(newEvent);
         
     } catch (e) {
-        return { success: false, message: 'Failed to create event.' };
+        const errorMessage = e instanceof Error ? e.message : 'Failed to create event.';
+        return { success: false, message: errorMessage };
     }
     
     revalidatePath('/admin/events');
@@ -184,15 +185,15 @@ export async function updateEvent(id: string, formData: FormData, token: string 
     if (!validated.success) {
         return { success: false, message: 'Invalid data.', errors: validated.error.flatten().fieldErrors };
     }
-    const { ticketTypes, ...eventData } = validated.data;
+    const { ticketTypes, date, locationLat, locationLng, locationName, ...restOfData } = validated.data;
     try {
          const updatedEvent: Partial<Omit<Event, 'id'>> = {
-            ...eventData,
-            date: new Date(validated.data.date),
+            ...restOfData,
+            date: new Date(date),
             location: {
-                name: validated.data.locationName,
-                lat: validated.data.locationLat,
-                lng: validated.data.locationLng,
+                name: locationName,
+                lat: locationLat,
+                lng: locationLng,
             },
             ticketTypes: JSON.parse(ticketTypes),
         };
@@ -286,5 +287,3 @@ export async function getEventByIdAction(id: string) {
 export async function getTicketsByUserIdAction(userId: string) {
     return getTicketsByUserId(userId);
 }
-
-    
