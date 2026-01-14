@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
 import { EventGalleryUpload } from '@/components/admin/event-gallery-upload';
 import { createEventWithGallery, updateEventWithGallery } from '@/lib/new-actions';
-
+import EventTypeConfig, { EventTypeConfig as EventTypeConfigType } from './event-type-config';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -48,6 +48,24 @@ export default function EventForm({ event }: { event: Event | null }) {
   const { token } = useSession();
   const [isPending, setIsPending] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [eventTypeConfig, setEventTypeConfig] = useState<EventTypeConfigType | undefined>(
+    event?.eventTypeConfig ? (event.eventTypeConfig as EventTypeConfigType) : undefined
+  );
+
+  // Actualizar eventTypeConfig cuando cambie el evento (útil para edición)
+  useEffect(() => {
+    if (event?.eventTypeConfig) {
+      setEventTypeConfig(event.eventTypeConfig as EventTypeConfigType);
+    } else if (!event) {
+      // Resetear cuando no hay evento (modo creación)
+      setEventTypeConfig(undefined);
+    }
+  }, [event]);
+
+  // Memoizar el callback para evitar recreaciones innecesarias
+  const handleEventTypeConfigChange = useCallback((config: EventTypeConfigType) => {
+    setEventTypeConfig(config);
+  }, []);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -213,6 +231,13 @@ export default function EventForm({ event }: { event: Event | null }) {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Configuración del Tipo de Evento */}
+            <EventTypeConfig
+              value={eventTypeConfig}
+              onChange={handleEventTypeConfigChange}
+              defaultStartDate={form.watch('date') || format(new Date(), "yyyy-MM-dd'T'HH:mm")}
+            />
           </div>
 
           <div className="space-y-6">
@@ -364,6 +389,15 @@ export default function EventForm({ event }: { event: Event | null }) {
             <input type="hidden" name="locationLat" value={form.watch('locationLat').toString()} />
             <input type="hidden" name="locationLng" value={form.watch('locationLng').toString()} />
           </>
+        )}
+
+        {/* 4. CONFIGURACIÓN DEL TIPO DE EVENTO */}
+        {eventTypeConfig && (
+          <input 
+            type="hidden" 
+            name="eventTypeConfig" 
+            value={JSON.stringify(eventTypeConfig)} 
+          />
         )}
 
         <div className="flex justify-end gap-2">
