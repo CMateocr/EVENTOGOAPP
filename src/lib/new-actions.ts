@@ -1,10 +1,10 @@
 'use server'
 
 import dbConnect from "./db";
-import { UserModel, EventModel } from "./models";
+import { UserModel, EventModel, TicketModel } from "./models";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createEvent as createEventInDb } from "./data";
+import { getEventById } from "./data";
 import { decodeToken, createToken } from "./jwt"; 
 
 export async function updateUserImage(email: string, imageBase64: string) {
@@ -25,7 +25,7 @@ export async function updateUserImage(email: string, imageBase64: string) {
         name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
-        image: updatedUser.image //la nueva foto
+        image: updatedUser.image
     };
 
     const newToken = createToken(userPayload); 
@@ -46,12 +46,15 @@ export async function createEventWithGallery(formData: FormData, galleryImages: 
 
     const rawData = Object.fromEntries(formData.entries());
 
-    // CORRECCIÓN Aseguramos que 'id' sea string siempre
+    // 1. BLINDAJE: Aseguramos que 'id' sea string siempre en tickets
     const rawTickets = JSON.parse(rawData.ticketTypes as string);
     const ticketTypes = rawTickets.map((t: any) => ({
         ...t,
-        id: t.id || crypto.randomUUID() // Si falta ID, lo crea
+        id: t.id || crypto.randomUUID() 
     }));
+
+    // 2. CORRECCIÓN: Parseamos la configuración de asientos para que no falle
+    const eventTypeConfig = rawData.eventTypeConfig ? JSON.parse(rawData.eventTypeConfig as string) : undefined;
 
     const newEventData = {
         name: rawData.name as string,
@@ -65,7 +68,8 @@ export async function createEventWithGallery(formData: FormData, galleryImages: 
         capacity: Number(rawData.capacity),
         image: rawData.image as string,
         images: galleryImages,
-        ticketTypes: ticketTypes, 
+        ticketTypes: ticketTypes,
+        eventTypeConfig: eventTypeConfig, // <--- Aquí usamos la variable corregida
         createdBy: user.id
     };
 
@@ -100,12 +104,14 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
 
     const rawData = Object.fromEntries(formData.entries());
 
-    // CORRECCIÓN Aseguramos que 'id' sea string siempre
     const rawTickets = JSON.parse(rawData.ticketTypes as string);
     const ticketTypes = rawTickets.map((t: any) => ({
         ...t,
         id: t.id || crypto.randomUUID()
     }));
+
+    // Parseamos la config de asientos también al editar
+    const eventTypeConfig = rawData.eventTypeConfig ? JSON.parse(rawData.eventTypeConfig as string) : undefined;
 
     const updateData = {
         name: rawData.name as string,
@@ -118,7 +124,7 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
         },
         capacity: Number(rawData.capacity),
         image: rawData.image as string,
-        images: galleryImages, // Actualizamos galería
+        images: galleryImages, 
         ticketTypes: ticketTypes,
         eventTypeConfig: eventTypeConfig,
     };
@@ -137,8 +143,7 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
     redirect('/admin/events');
 }
 
-import { getTicketsByUserId, getEventById } from "./data"; 
-
+// --- ESTA ES LA FUNCIÓN QUE HACE QUE SE VEAN TUS TICKETS ---
 export async function getMyTicketsAction(token: string) {
   try {
     const user = decodeToken(token);
@@ -146,21 +151,35 @@ export async function getMyTicketsAction(token: string) {
 
     await dbConnect();
 
-    const rawTickets = await getTicketsByUserId(user.id);
+    // AQUÍ ESTÁ EL TRUCO:
+    // Buscamos el ID como texto O como objeto. Así nunca falla.
+    const rawTickets = await TicketModel.find({
+        $or: [
+            { userId: user.id },                
+            { userId: user.id.toString() }      
+        ]
+    }).lean();
+
     const ticketsByEvent: Record<string, { eventId: string, count: number, tickets: any[] }> = {};
   
     for (const ticket of rawTickets) {
-        if (!ticketsByEvent[ticket.eventId]) {
-            ticketsByEvent[ticket.eventId] = { eventId: ticket.eventId, count: 0, tickets: [] };
+        const eId = ticket.eventId.toString();
+        
+        if (!ticketsByEvent[eId]) {
+            ticketsByEvent[eId] = { eventId: eId, count: 0, tickets: [] };
         }
-        ticketsByEvent[ticket.eventId].count++;
-        ticketsByEvent[ticket.eventId].tickets.push(ticket);
+        ticketsByEvent[eId].count++;
+        // Convertimos _id a string para que React no se rompa
+        ticketsByEvent[eId].tickets.push({ 
+            ...ticket, 
+            _id: ticket._id.toString(),
+            eventId: eId 
+        });
     }
 
     const myEvents = await Promise.all(
         Object.values(ticketsByEvent).map(async (group) => {
             const eventDetails = await getEventById(group.eventId);
-            // Convertimos a objeto plano para que React no se queje
             return {
                 ...group,
                 eventDetails: JSON.parse(JSON.stringify(eventDetails))

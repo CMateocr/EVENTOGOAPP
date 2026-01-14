@@ -5,9 +5,11 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/hooks/use-session';
 
-interface MainNavProps extends React.HTMLAttributes<HTMLElement> {}
+interface MainNavProps extends React.HTMLAttributes<HTMLElement> {
+  onLinkClick?: () => void;
+}
 
-export function MainNav({ className, ...props }: MainNavProps) {
+export function MainNav({ className, onLinkClick, ...props }: MainNavProps) {
   const pathname = usePathname();
   const { user } = useSession();
 
@@ -32,6 +34,7 @@ export function MainNav({ className, ...props }: MainNavProps) {
         <Link
           key={route.href}
           href={route.href}
+          onClick={onLinkClick}
           className={cn(
             'text-sm font-bold transition-colors hover:text-yellow-400',
             route.active ? 'text-yellow-400' : 'text-gray-400'

@@ -6,6 +6,7 @@ import { getMyTicketsAction } from '@/lib/new-actions';
 import Link from 'next/link';
 import { Ticket, Calendar, MapPin, QrCode, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { TicketQRModal } from '@/components/qr-modal'; // <--- IMPORTAMOS EL MODAL
 
 function getEventImage(event: any) {
   if (event.images && event.images.length > 0) return event.images[0];
@@ -14,11 +15,15 @@ function getEventImage(event: any) {
 }
 
 export default function MyTicketsPage() {
-  // CAMBIO AQUÍ: Usamos 'user' en lugar de 'session'
   const { token, user } = useSession(); 
   const [loading, setLoading] = useState(true);
   const [myEvents, setMyEvents] = useState<any[]>([]);
   
+  // Estado para controlar el modal del QR
+  const [qrModal, setQrModal] = useState<{ isOpen: boolean; ticketId: string; eventName: string }>({
+    isOpen: false, ticketId: '', eventName: ''
+  });
+
   useEffect(() => {
     async function loadTickets() {
       if (!token) {
@@ -38,11 +43,16 @@ export default function MyTicketsPage() {
       }
     }
 
-    // CAMBIO AQUÍ: Verificamos 'user' en lugar de 'session'
     if (user !== undefined) {
         loadTickets();
     }
   }, [token, user]);
+
+  // --- Función para abrir el modal QR ---
+  const openQrModal = (ticketId: string, eventName: string) => {
+      // Usamos el ID del primer ticket del grupo para generar el QR principal
+      setQrModal({ isOpen: true, ticketId, eventName });
+  };
 
   if (loading || user === undefined) {
       return (
@@ -52,8 +62,8 @@ export default function MyTicketsPage() {
       );
   }
 
-  // CAMBIO AQUÍ: Verificamos 'user'
   if (!user) {
+    // ... (El bloque de "No logueado" se mantiene igual) ...
     return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 animate-in fade-in">
             <div className="bg-[#111] p-8 rounded-2xl border border-white/10 text-center max-w-md w-full">
@@ -72,15 +82,24 @@ export default function MyTicketsPage() {
     );
   }
 
-  // ... (El resto del renderizado es igual) ...
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans p-6 md:p-12">
+        {/* --- INCLUIMOS EL MODAL AQUÍ --- */}
+        <TicketQRModal 
+            isOpen={qrModal.isOpen}
+            onClose={() => setQrModal({ ...qrModal, isOpen: false })}
+            ticketId={qrModal.ticketId}
+            eventName={qrModal.eventName}
+        />
+        {/* ----------------------------- */}
+
         <div className="max-w-4xl mx-auto">
             <h1 className="text-3xl md:text-5xl font-black mb-10 flex items-center gap-4 border-b border-white/10 pb-6">
                 <Ticket className="w-8 h-8 md:w-10 md:h-10 text-yellow-500" /> MIS TICKETS
             </h1>
 
             {myEvents.length === 0 ? (
+                // ... (El bloque de "Sin tickets" se mantiene igual) ...
                 <div className="flex flex-col items-center justify-center py-20 bg-[#111] rounded-2xl border border-dashed border-white/10 animate-in zoom-in-95">
                     <AlertCircle className="w-12 h-12 text-gray-600 mb-4" />
                     <p className="text-gray-400 text-xl mb-6 font-bold">Aún no tienes entradas.</p>
@@ -97,15 +116,19 @@ export default function MyTicketsPage() {
                         if (!event) return null;
 
                         const imageUrl = getEventImage(event);
+                        // Obtenemos el ID del primer ticket para usarlo en el QR
+                        const mainTicketId = item.tickets[0]._id || item.tickets[0].id || 'UNKNOWN_ID';
 
                         return (
                             <div key={item.eventId} className="bg-[#111] rounded-2xl overflow-hidden border border-white/10 flex flex-col md:flex-row hover:border-yellow-500/50 transition-all duration-300 hover:shadow-lg group animate-in slide-in-from-bottom-4">
+                                {/* Imagen Ticket */}
                                 <div className="md:w-56 h-48 md:h-auto relative border-b md:border-b-0 md:border-r border-dashed border-white/20">
                                     <img src={imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                                     <div className="absolute top-1/2 -left-3 w-6 h-6 bg-[#050505] rounded-full"></div>
                                     <div className="absolute top-1/2 -right-3 md:hidden w-6 h-6 bg-[#050505] rounded-full"></div>
                                 </div>
 
+                                {/* Info del Ticket */}
                                 <div className="p-6 flex-1 flex flex-col justify-between">
                                     <div>
                                         <div className="flex justify-between items-start mb-2">
@@ -128,13 +151,18 @@ export default function MyTicketsPage() {
                                     </div>
 
                                     <div className="mt-6 pt-6 border-t border-dashed border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                        <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">
-                                            ID: {item.tickets[0]._id ? item.tickets[0]._id.slice(-8) : 'CONFIRMADO'}
+                                        <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase hidden sm:block">
+                                            ID: {mainTicketId.slice(-8)}
                                         </p>
-                                        <Button className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-white font-bold border border-white/10 hover:border-yellow-500/50">
+                                        {/* --- BOTÓN ACTIVADO --- */}
+                                        <Button 
+                                            onClick={() => openQrModal(mainTicketId, event.name)}
+                                            className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-white font-bold border border-white/10 hover:border-yellow-500/50 transition-all active:scale-95"
+                                        >
                                             <QrCode className="w-4 h-4 mr-2 text-yellow-500" /> 
                                             Ver Código QR
                                         </Button>
+                                        {/* ---------------------- */}
                                     </div>
                                 </div>
                             </div>

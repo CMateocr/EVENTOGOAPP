@@ -1,4 +1,3 @@
-
 import mongoose from 'mongoose';
 import dbConnect from './db';
 import { EventModel, UserModel, TicketModel, OrderModel } from './models';
@@ -9,8 +8,6 @@ export const getEvents = async (includePast = true, createdBy?: string): Promise
   await dbConnect();
 
   // CAMBIO IMPORTANTE: Quitamos el filtro de fecha temporalmente
-  // Antes era: const query: any = includePast ? {} : { date: { $gte: new Date() } };
-
   // Ahora forzamos que traiga todo para probar:
   const query: any = {};
 
@@ -65,7 +62,8 @@ export const findUserByEmail = async (email: string): Promise<User | undefined> 
   const user = await UserModel.findOne({ email }).lean();
   if (user) {
     const { _id, ...rest } = user as any;
-    return { id: _id.toString(), ...rest } as User;
+    // CORRECCIÓN: '...rest' primero, luego 'id'
+    return { ...rest, id: _id.toString() } as User;
   }
   return undefined;
 };
@@ -76,7 +74,8 @@ export const findUserById = async (id: string): Promise<User | undefined> => {
     const user = await UserModel.findById(id).lean();
     if (user) {
         const { _id, ...rest } = user as any;
-        return { id: _id.toString(), ...rest } as User;
+        // CORRECCIÓN: '...rest' primero, luego 'id'
+        return { ...rest, id: _id.toString() } as User;
     }
     return undefined;
 };
@@ -85,7 +84,8 @@ export const createNewUser = async (name: string, email: string, password: strin
     await dbConnect();
     const newUser = await UserModel.create({ name, email, password, role: 'User' });
     const { _id, ...rest } = newUser.toObject();
-    return { id: _id.toString(), ...rest };
+    // CORRECCIÓN: '...rest' primero, luego 'id'
+    return { ...rest, id: _id.toString() };
 };
 
 export const updateUser = async (userId: string, data: Partial<User>): Promise<User | null> => {
@@ -98,7 +98,8 @@ export const updateUser = async (userId: string, data: Partial<User>): Promise<U
     const updatedUser = await UserModel.findByIdAndUpdate(userId, updateData, { new: true }).lean();
     if (updatedUser) {
         const { _id, ...rest } = updatedUser as any;
-        return { id: _id.toString(), ...rest } as User;
+        // CORRECCIÓN: '...rest' primero, luego 'id'
+        return { ...rest, id: _id.toString() } as User;
     }
     return null;
 }
