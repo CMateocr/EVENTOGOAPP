@@ -6,6 +6,7 @@ export type User = {
   email: string;
   password?: string; // Will be hashed, not sent to client
   role: 'Admin' | 'User';
+  image?: string;  //para foto de perfil
 };
 
 export type TicketType = {
@@ -27,6 +28,7 @@ export type Event = {
   };
   capacity: number;
   image: string; // Placeholder image ID
+  images?: string[]; //para la o las fotos de los eventos
   ticketTypes: TicketType[];
   createdBy: string; // User ID of the creator
 };

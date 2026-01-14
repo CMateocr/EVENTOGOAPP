@@ -6,7 +6,8 @@ const UserSchema = new Schema<User>({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, required: true, default: 'User' }
+    role: { type: String, required: true, default: 'User' },
+    image: { type: String, required: false }
 });
 
 const TicketTypeSchema = new Schema<TicketType>({
@@ -26,6 +27,7 @@ const EventSchema = new Schema<Event>({
     },
     capacity: { type: Number, required: true },
     image: { type: String, required: true },
+    images: { type: [String], required: false, default: [] },
     ticketTypes: [TicketTypeSchema],
     createdBy: { type: String, required: true },
 });

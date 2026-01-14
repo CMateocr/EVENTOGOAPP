@@ -30,6 +30,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb', // Limite de tamaño para imagenes
+      allowedOrigins: [
+        'localhost:9002', 
+        '*.app.github.dev', 
+        '*.github.dev'
+      ],
+    },
+  },
 };
 
 export default nextConfig;

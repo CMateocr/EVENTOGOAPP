@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { updateUserProfile } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
+import { ProfileImageUpload } from '@/components/profile-image-upload';
+import { updateUserImage } from '@/lib/new-actions';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +30,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
+
+  const handleImageSave = async (base64Img: string) => {
+    if (user?.email) {
+      await updateUserImage(user.email, base64Img);
+      window.location.reload();
+    }
+  };
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -87,6 +96,12 @@ export default function ProfilePage() {
           <CardDescription>Update your personal information and role.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-8 flex flex-col items-center">
+            <ProfileImageUpload 
+              currentImage={user?.image}
+              onImageSelected={handleImageSave}
+            />
+          </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField

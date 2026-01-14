@@ -11,6 +11,8 @@ import { Event } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
+import { EventGalleryUpload } from '@/components/admin/event-gallery-upload';
+import { createEventWithGallery, updateEventWithGallery } from '@/lib/new-actions';
 
 
 import { Button } from '@/components/ui/button';
@@ -45,6 +47,7 @@ export default function EventForm({ event }: { event: Event | null }) {
   const { toast } = useToast();
   const { token } = useSession();
   const [isPending, setIsPending] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -57,7 +60,7 @@ export default function EventForm({ event }: { event: Event | null }) {
       locationLng: event?.location.lng || -78.467834,
       capacity: event?.capacity || 100,
       image: event?.image || '',
-      ticketTypes: event?.ticketTypes || [{ name: 'General Admission', price: 10 }],
+      ticketTypes: event?.ticketTypes || [{ id: crypto.randomUUID(), name: 'General Admission', price: 10 }],
     },
   });
   
@@ -109,9 +112,25 @@ export default function EventForm({ event }: { event: Event | null }) {
     setIsPending(false);
   }
 
+  const handleNewSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      
+      // LOGICA CONDICIONAL:
+      // Si existe 'event' y tiene un ID, significa que estamos EDITANDO.
+      if (event && event.id) {
+          console.log("Modo Edición: Actualizando evento...", event.id);
+          await updateEventWithGallery(event.id, formData, galleryImages, token);
+      } else {
+          // Si no hay evento, estamos CREANDO uno nuevo.
+          console.log("Modo Creación: Generando nuevo evento...");
+          await createEventWithGallery(formData, galleryImages, token);
+      }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleNewSubmit} className="space-y-8">
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
             <Card>
@@ -188,7 +207,7 @@ export default function EventForm({ event }: { event: Event | null }) {
                         </Button>
                     </div>
                  ))}
-                 <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', price: 0 })}>
+                 <Button type="button" variant="outline" size="sm" onClick={() => append({ id: crypto.randomUUID(), name: '', price: 0 })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Ticket Type
                 </Button>
@@ -237,6 +256,15 @@ export default function EventForm({ event }: { event: Event | null }) {
                     </FormItem>
                   )}
                 />
+
+                <div className="my-4 border p-4 rounded-md bg-zinc-50 border-dashed border-zinc-300">
+                  <label className="block text-sm font-bold mb-2 text-zinc-700">📸 Galería de Fotos (Carteles)</label>
+                  <EventGalleryUpload 
+                    onImagesChanged={setGalleryImages}
+                    initialImages={event?.images || []} 
+                  />
+                </div>
+
                  <FormField
                   control={form.control}
                   name="capacity"
@@ -312,6 +340,31 @@ export default function EventForm({ event }: { event: Event | null }) {
              </Card>
           </div>
         </div>
+
+        {/* --- INPUTS OCULTOS OBLIGATORIOS --- */}
+        
+        {/* 1. IMAGEN PRINCIPAL (Prioridad a tu galería) */}
+        <input 
+          type="hidden" 
+          name="image" 
+          value={galleryImages.length > 0 ? galleryImages[0] : "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800"} 
+        />
+
+        {/* 2. TIPOS DE TICKETS (JSON String) */}
+        <input 
+          type="hidden" 
+          name="ticketTypes" 
+          value={JSON.stringify(form.watch('ticketTypes'))} 
+        />
+
+        {/* 3. UBICACIÓN (Si existe) */}
+        {form.watch('locationName') && (
+          <>
+            <input type="hidden" name="locationName" value={form.watch('locationName')} />
+            <input type="hidden" name="locationLat" value={form.watch('locationLat').toString()} />
+            <input type="hidden" name="locationLng" value={form.watch('locationLng').toString()} />
+          </>
+        )}
 
         <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => router.push('/admin/events')}>Cancel</Button>

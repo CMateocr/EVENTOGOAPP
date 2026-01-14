@@ -5,13 +5,21 @@ import { EventModel, UserModel, TicketModel, OrderModel } from './models';
 import type { Event, User, Ticket, Order } from './types';
 
 // --- Event Functions ---
-export const getEvents = async (includePast = false, createdBy?: string): Promise<Event[]> => {
+export const getEvents = async (includePast = true, createdBy?: string): Promise<Event[]> => {
   await dbConnect();
-  const query: any = includePast ? {} : { date: { $gte: new Date() } };
+
+  // CAMBIO IMPORTANTE: Quitamos el filtro de fecha temporalmente
+  // Antes era: const query: any = includePast ? {} : { date: { $gte: new Date() } };
+
+  // Ahora forzamos que traiga todo para probar:
+  const query: any = {};
+
   if (createdBy) {
     query.createdBy = createdBy;
   }
-  const events = await EventModel.find(query).sort({ date: 'asc' }).lean();
+
+  // Ordenamos por fecha descendente (lo más nuevo primero)
+  const events = await EventModel.find(query).sort({ date: -1 }).lean();
   return JSON.parse(JSON.stringify(events.map(e => ({ ...e, id: e._id.toString() }))));
 };
 

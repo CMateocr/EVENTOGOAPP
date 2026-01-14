@@ -11,33 +11,37 @@ import {
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Ticket } from 'lucide-react';
 import type { Event } from '@/lib/types';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+// --- LOGICA DE IMAGEN COMPARTIDA ---
+function getEventImage(event: any) {
+  if (event.images && event.images.length > 0) return event.images[0];
+  if (event.image && (event.image.startsWith('http') || event.image.startsWith('data:'))) return event.image;
+  // Fallback
+  return 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800';
+}
 
 type EventCardProps = {
   event: Event;
 };
 
 export default function EventCard({ event }: EventCardProps) {
-  const placeholderImage = PlaceHolderImages.find(p => p.id === event.image);
+  const imageUrl = getEventImage(event);
   const lowestPrice = Math.min(...event.ticketTypes.map(t => t.price));
 
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-300 ease-in-out">
-      <Link href={`/events/${event.id}`} className="block">
+      <Link href={`/show/event/${event.id}`} className="block">
         <div className="relative h-48 w-full">
-          {placeholderImage && (
-            <Image
-              src={placeholderImage.imageUrl}
-              alt={placeholderImage.description}
-              data-ai-hint={placeholderImage.imageHint}
-              fill
-              className="object-cover"
-            />
-          )}
+          <Image
+            src={imageUrl}
+            alt={event.name}
+            fill
+            className="object-cover"
+          />
         </div>
       </Link>
       <CardHeader>
-        <Link href={`/events/${event.id}`}>
+        <Link href={`/show/event/${event.id}`}>
           <CardTitle className="text-xl font-bold leading-tight hover:text-primary transition-colors">
             {event.name}
           </CardTitle>
@@ -59,7 +63,7 @@ export default function EventCard({ event }: EventCardProps) {
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full bg-accent hover:bg-accent/90">
-          <Link href={`/events/${event.id}`}>View Details</Link>
+          <Link href={`/show/event/${event.id}`}>View Details</Link>
         </Button>
       </CardFooter>
     </Card>

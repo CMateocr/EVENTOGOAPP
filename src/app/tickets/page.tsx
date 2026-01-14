@@ -1,80 +1,61 @@
-'use client';
-
-import { useEffect, useState, useTransition } from 'react';
-import { useSession } from '@/hooks/use-session';
-import { getTicketsByUserIdAction, getEventByIdAction } from '@/lib/actions';
-import { useRouter } from 'next/navigation';
-import TicketCard from '@/components/ticket-card';
+import { getEvents } from '@/lib/data';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Event, Ticket } from '@/lib/types';
+import { Ticket } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
 
-type EnrichedTicket = Ticket & { event?: Event };
+function getEventImage(event: any) {
+  if (event.images && event.images.length > 0) return event.images[0];
+  if (event.image && (event.image.startsWith('http') || event.image.startsWith('data:'))) return event.image;
+  return 'https://images.unsplash.com/photo-1514525253440-b393452e8d26?auto=format&fit=crop&w=800';
+}
 
-export default function MyTicketsPage() {
-  const { user, loading: sessionLoading } = useSession();
-  const router = useRouter();
-  const [tickets, setTickets] = useState<EnrichedTicket[]>([]);
-  const [loading, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (sessionLoading) return;
-
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    startTransition(async () => {
-      const userTickets = await getTicketsByUserIdAction(user!.id);
-      
-      const enrichedTickets = await Promise.all(
-        userTickets.map(async (ticket) => {
-          const event = await getEventByIdAction(ticket.eventId);
-          return { ...ticket, event };
-        })
-      );
-
-      setTickets(enrichedTickets);
-    });
-
-  }, [user, router, sessionLoading]);
-
-
-  if (loading || sessionLoading) {
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <Skeleton className="h-10 w-1/4 mb-8" />
-            <div className="space-y-6">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-            </div>
-        </div>
-    )
-  }
+export default async function EventsListPage() {
+  const events = await getEvents();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold tracking-tight mb-8 font-headline">
-        My Tickets
-      </h1>
-      {tickets.length > 0 ? (
-        <div className="space-y-6">
-          {tickets.map((ticket) =>
-            ticket.event ? <TicketCard key={ticket.id} ticket={ticket} event={ticket.event} /> : null
-          )}
+    <div className="min-h-screen bg-[#050505] text-white font-sans p-6 md:p-12">
+        <div className="max-w-6xl mx-auto">
+            <h1 className="text-3xl md:text-5xl font-black mb-10 flex items-center gap-4">
+                <span className="text-yellow-500">///</span> EVENTOS DISPONIBLES
+            </h1>
+
+            <div className="space-y-4">
+                {events.map((event: any) => {
+                    const img = getEventImage(event);
+                    return (
+                        <div key={event.id} className="flex flex-col md:flex-row bg-[#111] border border-white/10 rounded-xl overflow-hidden hover:border-yellow-500/50 transition-colors group">
+                            {/* Imagen Lateral */}
+                            <div className="w-full md:w-64 h-48 md:h-auto relative">
+                                <img src={img} alt={event.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                            </div>
+
+                            {/* Info */}
+                            <div className="p-6 flex-1 flex flex-col justify-center">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h2 className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors">{event.name}</h2>
+                                    <span className="bg-white/10 text-xs font-bold px-2 py-1 rounded text-gray-300">
+                                        {new Date(event.date).toLocaleDateString('es-EC', {
+                                          timeZone: 'America/Guayaquil'
+                                        })}
+                                    </span>
+                                </div>
+                                <p className="text-gray-400 mb-6 line-clamp-2">{event.description}</p>
+
+                                <div className="flex items-center gap-4 mt-auto">
+                                    <Link href={`/show/event/${event.id}`}>
+                                        <button className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-6 py-2 rounded-full flex items-center gap-2 transition-transform active:scale-95">
+                                            <Ticket className="w-4 h-4" />
+                                            Ver Detalles
+                                        </button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
-      ) : (
-        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-          <h2 className="text-2xl font-semibold mb-2">You don't have any tickets yet.</h2>
-          <p className="text-muted-foreground mb-4">Why not find an event to attend?</p>
-          <Button asChild>
-            <Link href="/">Browse Events</Link>
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
