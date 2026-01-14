@@ -60,6 +60,16 @@ export async function createEventWithGallery(formData: FormData, galleryImages: 
       ticketTypes = [];
     }
     
+    // Parsear eventTypeConfig si existe
+    let eventTypeConfig = undefined;
+    if (rawData.eventTypeConfig) {
+      try {
+        eventTypeConfig = JSON.parse(rawData.eventTypeConfig as string);
+      } catch (e) {
+        console.error("Error parsing eventTypeConfig:", e);
+      }
+    }
+    
     const newEventData = {
         name: rawData.name as string,
         description: rawData.description as string,
@@ -75,6 +85,7 @@ export async function createEventWithGallery(formData: FormData, galleryImages: 
         images: galleryImages,          
         ticketTypes: ticketTypes,
         createdBy: user.id,
+        eventTypeConfig: eventTypeConfig,
     };
 
     try {
@@ -108,6 +119,16 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
     const rawData = Object.fromEntries(formData.entries());
     const ticketTypes = JSON.parse(rawData.ticketTypes as string);
 
+    // Parsear eventTypeConfig si existe
+    let eventTypeConfig = undefined;
+    if (rawData.eventTypeConfig) {
+      try {
+        eventTypeConfig = JSON.parse(rawData.eventTypeConfig as string);
+      } catch (e) {
+        console.error("Error parsing eventTypeConfig:", e);
+      }
+    }
+
     // Preparamos los datos igual que al crear (incluyendo el arreglo de fecha)
     const updateData = {
         name: rawData.name as string,
@@ -123,6 +144,7 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
         image: rawData.image as string,
         images: galleryImages, // <--- Actualizamos la galería
         ticketTypes: ticketTypes,
+        eventTypeConfig: eventTypeConfig,
     };
 
     try {

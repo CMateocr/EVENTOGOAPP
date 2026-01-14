@@ -30,6 +30,7 @@ const EventSchema = new Schema<Event>({
     images: { type: [String], required: false, default: [] },
     ticketTypes: [TicketTypeSchema],
     createdBy: { type: String, required: true },
+    eventTypeConfig: { type: Schema.Types.Mixed, required: false },
 });
 
 const TicketSchema = new Schema<Ticket>({
