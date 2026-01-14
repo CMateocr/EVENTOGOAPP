@@ -39,9 +39,24 @@ export default function ProfilePage() {
   const [isPending, setIsPending] = useState(false);
 
   const handleImageSave = async (base64Img: string) => {
-    if (user?.email) {
-      await updateUserImage(user.email, base64Img);
-      window.location.reload();
+    if (!user?.email) return;
+
+    try {
+        // Llamamos a la acción del servidor
+        const result = await updateUserImage(user.email, base64Img);
+        
+        if (result.success && result.token) {
+            // MAGIC MOMENT: Actualizamos la sesión en vivo con el nuevo token
+            setToken(result.token); 
+            
+            // Notificación de éxito
+            toast({ title: "Foto actualizada", description: "Tu perfil se ha refrescado." });
+        } else {
+            toast({ title: "Error", description: result.error || "Intenta de nuevo", variant: "destructive" });
+        }
+    } catch (e) {
+        console.error(e);
+        toast({ title: "Error de conexión", variant: "destructive" });
     }
   };
 

@@ -5,99 +5,81 @@ import { UserModel, EventModel } from "./models";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createEvent as createEventInDb } from "./data";
-import { decodeToken } from "./jwt";
+import { decodeToken, createToken } from "./jwt"; 
 
-// --- PERFIL: Actualizar Foto (CON LOGS) ---
 export async function updateUserImage(email: string, imageBase64: string) {
   console.log("--> INICIO: Intentando guardar imagen para:", email);
-  console.log("--> Tamaño de imagen recibida:", imageBase64.length, "caracteres");
 
   try {
-    console.log("--> Conectando a DB...");
     await dbConnect();
-    console.log("--> DB Conectada.");
 
-    // Buscamos si el usuario existe antes de actualizar
-    const userExists = await UserModel.findOne({ email });
-    if (!userExists) {
-        console.error("--> ERROR: Usuario no encontrado en DB con email:", email);
-        return { success: false, error: "Usuario no encontrado" };
-    }
-
-    console.log("--> Usuario encontrado. Actualizando campo image...");
     const result = await UserModel.updateOne({ email }, { image: imageBase64 });
-    console.log("--> Resultado Mongo:", result);
+    const updatedUser = await UserModel.findOne({ email }).lean();
 
-    if (result.modifiedCount === 0 && result.matchedCount === 1) {
-        console.log("--> AVISO: La imagen era la misma, no hubo cambios.");
+    if (!updatedUser) {
+        return { success: false, error: "Usuario no encontrado tras actualizar" };
     }
+
+    const userPayload = {
+        id: (updatedUser as any)._id.toString(),
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        image: updatedUser.image //la nueva foto
+    };
+
+    const newToken = createToken(userPayload); 
 
     revalidatePath('/profile');
-    console.log("--> ÉXITO: Imagen guardada y path revalidado.");
-    return { success: true };
+    
+    return { success: true, token: newToken };
 
   } catch (error: any) {
     console.error("--> ERROR CRÍTICO al guardar imagen:", error);
-    return { success: false, error: error.message || "Error desconocido en servidor" };
+    return { success: false, error: error.message || "Error desconocido" };
   }
 }
 
-// ... Mantén el resto de funciones de eventos igual ...
 export async function createEventWithGallery(formData: FormData, galleryImages: string[], token: string | null) {
-    console.log("--> RECIBIENDO EVENTO");
-    console.log("--> FOTOS EN GALERÍA:", galleryImages.length); // <--- DEBE DECIR MÁS DE 0
     const user = decodeToken(token || '');
     if (!user) return { success: false, message: 'Authentication required.' };
 
     const rawData = Object.fromEntries(formData.entries());
-    
-    // Parsear ticketTypes desde JSON string (como en actions.ts original)
-    let ticketTypes: { id?: string; name: string; price: number }[] = [];
-    try {
-      ticketTypes = JSON.parse(rawData.ticketTypes as string);
-    } catch (e) {
-      console.error("Error parsing ticketTypes:", e);
-      ticketTypes = [];
-    }
-    
-    // Parsear eventTypeConfig si existe
-    let eventTypeConfig = undefined;
-    if (rawData.eventTypeConfig) {
-      try {
-        eventTypeConfig = JSON.parse(rawData.eventTypeConfig as string);
-      } catch (e) {
-        console.error("Error parsing eventTypeConfig:", e);
-      }
-    }
-    
+
+    // CORRECCIÓN Aseguramos que 'id' sea string siempre
+    const rawTickets = JSON.parse(rawData.ticketTypes as string);
+    const ticketTypes = rawTickets.map((t: any) => ({
+        ...t,
+        id: t.id || crypto.randomUUID() // Si falta ID, lo crea
+    }));
+
     const newEventData = {
         name: rawData.name as string,
         description: rawData.description as string,
-        // TRUCO: Le agregamos el offset de Ecuador (-05:00) a la fecha cruda para que se guarde bien
-        date: new Date(rawData.date as string + ":00.000-05:00"), 
+        date: new Date(rawData.date + ":00.000-05:00"), 
         location: {
             name: rawData.locationName as string,
             lat: Number(rawData.locationLat),
             lng: Number(rawData.locationLng),
         },
         capacity: Number(rawData.capacity),
-        image: rawData.image as string, 
-        images: galleryImages,          
-        ticketTypes: ticketTypes,
-        createdBy: user.id,
-        eventTypeConfig: eventTypeConfig,
+        image: rawData.image as string,
+        images: galleryImages,
+        ticketTypes: ticketTypes, 
+        createdBy: user.id
     };
 
     try {
-        await dbConnect(); // Aseguramos conexión aquí también
-        await createEventInDb(newEventData); 
+        await dbConnect();
+        await EventModel.create(newEventData);
     } catch (e) {
         console.error("Error creating event:", e);
         return { success: false, message: 'Failed to create event.' };
     }
-    
+
     revalidatePath('/admin/events');
-    revalidatePath('/show'); 
+    revalidatePath('/');
+    revalidatePath('/discover');
     redirect('/admin/events');
 }
 
@@ -117,24 +99,18 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
     if (!user) return { success: false, message: 'Authentication required.' };
 
     const rawData = Object.fromEntries(formData.entries());
-    const ticketTypes = JSON.parse(rawData.ticketTypes as string);
 
-    // Parsear eventTypeConfig si existe
-    let eventTypeConfig = undefined;
-    if (rawData.eventTypeConfig) {
-      try {
-        eventTypeConfig = JSON.parse(rawData.eventTypeConfig as string);
-      } catch (e) {
-        console.error("Error parsing eventTypeConfig:", e);
-      }
-    }
+    // CORRECCIÓN Aseguramos que 'id' sea string siempre
+    const rawTickets = JSON.parse(rawData.ticketTypes as string);
+    const ticketTypes = rawTickets.map((t: any) => ({
+        ...t,
+        id: t.id || crypto.randomUUID()
+    }));
 
-    // Preparamos los datos igual que al crear (incluyendo el arreglo de fecha)
     const updateData = {
         name: rawData.name as string,
         description: rawData.description as string,
-        // Mantenemos el ajuste de zona horaria para que no se cambie la hora al editar
-        date: new Date(rawData.date as string + ":00.000-05:00"), 
+        date: new Date(rawData.date + ":00.000-05:00"), 
         location: {
             name: rawData.locationName as string,
             lat: Number(rawData.locationLat),
@@ -142,24 +118,60 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
         },
         capacity: Number(rawData.capacity),
         image: rawData.image as string,
-        images: galleryImages, // <--- Actualizamos la galería
+        images: galleryImages, // Actualizamos galería
         ticketTypes: ticketTypes,
         eventTypeConfig: eventTypeConfig,
     };
 
     try {
         await dbConnect();
-        // Buscamos por ID y actualizamos
         await EventModel.findByIdAndUpdate(id, updateData);
     } catch (e) {
         console.error("Error updating event:", e);
         return { success: false, message: 'Failed to update event.' };
     }
 
-    // Revalidamos para que se vean los cambios
     revalidatePath('/admin/events');
+    revalidatePath('/');
     revalidatePath(`/show/event/${id}`);
-    
-    // Redirigimos a la lista
     redirect('/admin/events');
+}
+
+import { getTicketsByUserId, getEventById } from "./data"; 
+
+export async function getMyTicketsAction(token: string) {
+  try {
+    const user = decodeToken(token);
+    if (!user) return { success: false, message: "Sesión inválida" };
+
+    await dbConnect();
+
+    const rawTickets = await getTicketsByUserId(user.id);
+    const ticketsByEvent: Record<string, { eventId: string, count: number, tickets: any[] }> = {};
+  
+    for (const ticket of rawTickets) {
+        if (!ticketsByEvent[ticket.eventId]) {
+            ticketsByEvent[ticket.eventId] = { eventId: ticket.eventId, count: 0, tickets: [] };
+        }
+        ticketsByEvent[ticket.eventId].count++;
+        ticketsByEvent[ticket.eventId].tickets.push(ticket);
+    }
+
+    const myEvents = await Promise.all(
+        Object.values(ticketsByEvent).map(async (group) => {
+            const eventDetails = await getEventById(group.eventId);
+            // Convertimos a objeto plano para que React no se queje
+            return {
+                ...group,
+                eventDetails: JSON.parse(JSON.stringify(eventDetails))
+            };
+        })
+    );
+
+    return { success: true, data: myEvents };
+
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    return { success: false, message: "Error al obtener tickets" };
+  }
 }
