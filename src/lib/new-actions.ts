@@ -120,6 +120,7 @@ export async function updateEventWithGallery(id: string, formData: FormData, gal
         image: rawData.image as string,
         images: galleryImages, // Actualizamos galería
         ticketTypes: ticketTypes,
+        eventTypeConfig: eventTypeConfig,
     };
 
     try {

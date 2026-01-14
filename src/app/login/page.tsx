@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/actions';
 import { useSession } from '@/hooks/use-session';
@@ -10,13 +10,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Loader } from 'lucide-react';
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const { setToken } = useSession();
+  const { setToken, user, loading } = useSession();
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/show');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,7 +39,7 @@ export default function LoginPage() {
         title: 'Login successful!',
         description: 'Welcome back!',
       });
-      router.push('/');
+      router.push('/show'); // Redirect to /show on successful login
       router.refresh();
     } else {
       setError(result?.message || 'An unknown error occurred.');
@@ -40,6 +47,17 @@ export default function LoginPage() {
     
     setIsPending(false);
   };
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+        <div className="flex items-center gap-3 text-2xl font-bold">
+          <Loader className="animate-spin" />
+          <span>Loading session...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

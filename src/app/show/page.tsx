@@ -33,14 +33,7 @@ export default async function TicketShowPage() {
 
   return (
     <div className="min-h-screen bg-[#111] text-white font-sans">
-      {/* Header Estático */}
-      <header className="bg-black p-4 border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 className="text-2xl font-bold text-yellow-400 tracking-tighter">EVENT GO</h1>
-        <nav className="space-x-4 text-sm font-bold text-gray-400">
-            <Link href="/profile" className="hover:text-yellow-400">MI PERFIL</Link>
-            <Link href="/admin/events" className="hover:text-yellow-400">ADMIN</Link>
-        </nav>
-      </header>
+
 
       {/* Hero Banner */}
       <div className="relative h-64 md:h-96 w-full overflow-hidden mb-10">

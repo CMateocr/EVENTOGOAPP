@@ -25,7 +25,7 @@ export function MainNav({ className, ...props }: MainNavProps) {
 
   return (
     <nav
-      className={cn('hidden md:flex items-center space-x-4 lg:space-x-6 mx-6', className)}
+      className={cn('hidden md:flex items-center space-x-4 lg:space-x-6 mx-6 text-sm font-bold text-gray-400', className)}
       {...props}
     >
       {routes.map((route) => (
@@ -33,8 +33,8 @@ export function MainNav({ className, ...props }: MainNavProps) {
           key={route.href}
           href={route.href}
           className={cn(
-            'text-sm font-medium transition-colors hover:text-primary',
-            route.active ? 'text-primary' : 'text-muted-foreground'
+            'text-sm font-bold transition-colors hover:text-yellow-400',
+            route.active ? 'text-yellow-400' : 'text-gray-400'
           )}
         >
           {route.label}

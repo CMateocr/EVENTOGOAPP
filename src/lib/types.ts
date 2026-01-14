@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import type { EventTypeConfig } from '@/components/admin/event-type-config';
 
 export type User = {
   id: string;
@@ -31,6 +32,7 @@ export type Event = {
   images?: string[]; //para la o las fotos de los eventos
   ticketTypes: TicketType[];
   createdBy: string; // User ID of the creator
+  eventTypeConfig?: EventTypeConfig; // Configuración del tipo de evento
 };
 
 export type Ticket = {
