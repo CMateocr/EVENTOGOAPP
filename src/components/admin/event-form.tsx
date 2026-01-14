@@ -149,12 +149,21 @@ export default function EventForm({ event }: { event: Event | null }) {
   return (
     <Form {...form}>
       <form onSubmit={handleNewSubmit} className="space-y-8">
+        <div className="mb-8">
+          <h1 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tighter leading-[0.9] mb-2">
+            {event ? 'Editar' : 'Crear'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-600">Evento</span>
+          </h1>
+          <p className="text-gray-400 text-lg font-light">
+            {event ? 'Actualiza los detalles de tu evento' : 'Completa los detalles para tu nuevo evento'}
+          </p>
+        </div>
+
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
-            <Card>
+            <Card className="bg-[#151515] border-white/10 text-white">
               <CardHeader>
-                <CardTitle>{event ? 'Edit Event' : 'Create New Event'}</CardTitle>
-                <CardDescription>Fill in the details for your event below.</CardDescription>
+                <CardTitle className="text-white">{event ? 'Información del Evento' : 'Nuevo Evento'}</CardTitle>
+                <CardDescription className="text-gray-400">Completa los detalles básicos de tu evento.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -162,9 +171,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Event Name</FormLabel>
+                      <FormLabel className="text-gray-300">Nombre del Evento</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Summer Music Festival" {...field} />
+                        <Input placeholder="Ej. Festival de Música de Verano" {...field} className="bg-[#0a0a0a] border-white/10 text-white placeholder-gray-500" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -175,9 +184,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel className="text-gray-300">Descripción</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="A detailed description of the event..." rows={5} {...field} />
+                        <Textarea placeholder="Descripción detallada del evento..." rows={5} {...field} className="bg-[#0a0a0a] border-white/10 text-white placeholder-gray-500" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -186,22 +195,22 @@ export default function EventForm({ event }: { event: Event | null }) {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-[#151515] border-white/10 text-white">
               <CardHeader>
-                <CardTitle>Ticket Types</CardTitle>
-                <CardDescription>Define the tickets available for this event.</CardDescription>
+                <CardTitle className="text-white">Tipos de Entradas</CardTitle>
+                <CardDescription className="text-gray-400">Define las entradas disponibles para este evento.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                  {fields.map((field, index) => (
-                    <div key={field.id} className="flex gap-4 items-end p-4 border rounded-md">
+                    <div key={field.id} className="flex gap-4 items-end p-4 border border-white/10 rounded-md bg-[#0a0a0a]">
                         <FormField
                             control={form.control}
                             name={`ticketTypes.${index}.name`}
                             render={({ field }) => (
                                 <FormItem className="flex-1">
-                                <FormLabel>Type Name</FormLabel>
+                                <FormLabel className="text-gray-300">Nombre del Tipo</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="General Admission" {...field} />
+                                    <Input placeholder="Acceso General" {...field} className="bg-[#1a1a1a] border-white/10 text-white placeholder-gray-500" />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -212,22 +221,22 @@ export default function EventForm({ event }: { event: Event | null }) {
                             name={`ticketTypes.${index}.price`}
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Price ($)</FormLabel>
+                                <FormLabel className="text-gray-300">Precio ($)</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="25.00" {...field} />
+                                    <Input type="number" placeholder="25.00" {...field} className="bg-[#1a1a1a] border-white/10 text-white placeholder-gray-500" />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
                         />
-                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1} className="bg-red-600 hover:bg-red-700">
                             <Trash className="h-4 w-4" />
                         </Button>
                     </div>
                  ))}
-                 <Button type="button" variant="outline" size="sm" onClick={() => append({ id: crypto.randomUUID(), name: '', price: 0 })}>
+                 <Button type="button" className="h-auto py-2 px-4 text-sm rounded-lg border border-white/20 text-white hover:bg-white/10 font-bold backdrop-blur-sm bg-black/30 transition-all duration-300" onClick={() => append({ id: crypto.randomUUID(), name: '', price: 0 })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Ticket Type
+                    Agregar Tipo de Entrada
                 </Button>
               </CardContent>
             </Card>
@@ -241,9 +250,9 @@ export default function EventForm({ event }: { event: Event | null }) {
           </div>
 
           <div className="space-y-6">
-            <Card>
+            <Card className="bg-[#151515] border-white/10 text-white">
               <CardHeader>
-                <CardTitle>Details</CardTitle>
+                <CardTitle className="text-white">Detalles</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -251,9 +260,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                   name="date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Date & Time</FormLabel>
+                      <FormLabel className="text-gray-300">Fecha y Hora</FormLabel>
                       <FormControl>
-                        <Input type="datetime-local" {...field} />
+                        <Input type="datetime-local" {...field} className="bg-[#0a0a0a] border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -264,16 +273,16 @@ export default function EventForm({ event }: { event: Event | null }) {
                   name="image"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Event Image</FormLabel>
+                      <FormLabel className="text-gray-300">Imagen del Evento</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select an image" />
+                          <SelectTrigger className="bg-[#0a0a0a] border-white/10 text-white">
+                            <SelectValue placeholder="Selecciona una imagen" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-[#151515] border-white/10 text-white">
                           {PlaceHolderImages.map(img => (
-                            <SelectItem key={img.id} value={img.id}>{img.description}</SelectItem>
+                            <SelectItem key={img.id} value={img.id} className="hover:bg-white/10">{img.description}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -282,8 +291,8 @@ export default function EventForm({ event }: { event: Event | null }) {
                   )}
                 />
 
-                <div className="my-4 border p-4 rounded-md bg-zinc-50 border-dashed border-zinc-300">
-                  <label className="block text-sm font-bold mb-2 text-zinc-700">📸 Galería de Fotos (Carteles)</label>
+                <div className="my-4 border border-white/20 p-4 rounded-md bg-[#0a0a0a] border-dashed">
+                  <label className="block text-sm font-bold mb-2 text-gray-300">📸 Galería de Fotos (Pósters)</label>
                   <EventGalleryUpload 
                     onImagesChanged={setGalleryImages}
                     initialImages={event?.images || []} 
@@ -295,9 +304,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                   name="capacity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Capacity</FormLabel>
+                      <FormLabel className="text-gray-300">Capacidad</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="100" {...field} />
+                        <Input type="number" placeholder="100" {...field} className="bg-[#0a0a0a] border-white/10 text-white placeholder-gray-500" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -305,10 +314,10 @@ export default function EventForm({ event }: { event: Event | null }) {
                 />
               </CardContent>
             </Card>
-             <Card>
+             <Card className="bg-[#151515] border-white/10 text-white">
                 <CardHeader>
-                    <CardTitle>Location</CardTitle>
-                    <CardDescription>Click on the map to set the event location.</CardDescription>
+                    <CardTitle className="text-white">Ubicación</CardTitle>
+                    <CardDescription className="text-gray-400">Haz clic en el mapa para establecer la ubicación del evento.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <FormField
@@ -316,9 +325,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                     name="locationName"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Location Name</FormLabel>
+                        <FormLabel className="text-gray-300">Nombre de la Ubicación</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g. Quito Convention Center" {...field} />
+                            <Input placeholder="Ej. Centro de Convenciones de Quito" {...field} className="bg-[#0a0a0a] border-white/10 text-white placeholder-gray-500" />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -339,9 +348,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                             name="locationLat"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Latitude</FormLabel>
+                                <FormLabel className="text-gray-300">Latitud</FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="any" {...field} readOnly />
+                                    <Input type="number" step="any" {...field} readOnly className="bg-[#0a0a0a] border-white/10 text-white" />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -352,9 +361,9 @@ export default function EventForm({ event }: { event: Event | null }) {
                             name="locationLng"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Longitude</FormLabel>
+                                <FormLabel className="text-gray-300">Longitud</FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="any" {...field} readOnly />
+                                    <Input type="number" step="any" {...field} readOnly className="bg-[#0a0a0a] border-white/10 text-white" />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -400,10 +409,10 @@ export default function EventForm({ event }: { event: Event | null }) {
           />
         )}
 
-        <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.push('/admin/events')}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>
-                {isPending ? (event ? 'Saving...' : 'Creating...') : (event ? 'Save Changes' : 'Create Event')}
+        <div className="flex justify-end gap-3 pt-6 border-t border-white/10">
+            <Button type="button" className="h-auto py-2 px-4 text-base rounded-lg border border-white/20 text-white hover:bg-white/10 font-bold backdrop-blur-sm bg-black/30 transition-all duration-300" onClick={() => router.push('/admin/events')}>Cancelar</Button>
+            <Button type="submit" disabled={isPending} className="h-auto py-2 px-6 text-base rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-300 hover:to-yellow-500 text-black font-black shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:shadow-[0_0_30px_rgba(234,179,8,0.6)] hover:scale-105 transition-all duration-300 border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                {isPending ? (event ? 'Guardando...' : 'Creando...') : (event ? 'Guardar Cambios' : 'Crear Evento')}
             </Button>
         </div>
       </form>

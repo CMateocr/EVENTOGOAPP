@@ -40,13 +40,13 @@ export function EventGalleryUpload({ initialImages = [], onImagesChanged }: Even
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
         {images.map((img, index) => (
-          <div key={index} className="relative w-32 h-48 border rounded overflow-hidden group">
+          <div key={index} className="relative w-32 h-48 border border-white/10 rounded overflow-hidden group bg-[#1a1a1a]">
              {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img} alt={`Event ${index}`} className="object-cover w-full h-full" />
             <button
               onClick={() => removeImage(index)}
               type="button"
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <X size={16} />
             </button>
@@ -54,7 +54,7 @@ export function EventGalleryUpload({ initialImages = [], onImagesChanged }: Even
         ))}
       </div>
       <div className="flex items-center gap-4">
-        <Button variant="outline" type="button" onClick={() => document.getElementById('event-images')?.click()}>
+        <Button type="button" onClick={() => document.getElementById('event-images')?.click()} className="h-auto py-2 px-4 text-sm rounded-lg border border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500 font-bold backdrop-blur-sm bg-black/30 transition-all duration-300">
           Agregar Carteles/Fotos
         </Button>
         <input
@@ -66,7 +66,7 @@ export function EventGalleryUpload({ initialImages = [], onImagesChanged }: Even
           onChange={handleFileChange}
         />
       </div>
-      <p className="text-sm text-muted-foreground">Sube imágenes verticales para mejor visualización</p>
+      <p className="text-sm text-gray-400">Sube imágenes verticales para mejor visualización</p>
     </div>
   );
 }

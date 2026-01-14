@@ -39,16 +39,34 @@ export default function EditEventPage() {
   }, [id, user]);
 
   if (sessionLoading || loading) {
-    return <div className="container mx-auto px-4 py-8">Loading event...</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+        <div className="flex items-center gap-3 text-2xl font-bold">
+          <span>Cargando evento...</span>
+        </div>
+      </div>
+    );
   }
 
    if (!user) {
-    return <div className="container mx-auto px-4 py-8">Access Denied</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl font-bold text-red-400">Acceso Denegado</p>
+        </div>
+      </div>
+    );
   }
   
   // If there's an ID but the event hasn't been loaded yet, show loading
   if (id && !event) {
-    return <div className="container mx-auto px-4 py-8">Loading event...</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+        <div className="flex items-center gap-3 text-2xl font-bold">
+          <span>Cargando evento...</span>
+        </div>
+      </div>
+    );
   }
 
   // If we have an id but the event fetch resulted in notFound (event will be null)
@@ -57,8 +75,10 @@ export default function EditEventPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <EventForm event={event} />
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="container mx-auto px-4 py-12">
+        <EventForm event={event} />
+      </div>
     </div>
   );
 }
